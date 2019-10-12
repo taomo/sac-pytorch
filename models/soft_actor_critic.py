@@ -8,22 +8,23 @@ from q_network import QNetwork
 from policy_network import PolicyNetwork
 
 class SoftActorCritic(object):
-    def __init__(self, n_s, n_a, n_h, action_space, args):
+    def __init__(self, n_s, action_space, args):
         super(SoftActorCritic,self).__init__()
 
         # hyperparameters
         self.alpha = args.alpha
         self.gamma = args.gamma 
         self.tau = args.tau
-        self.target_update_step = args.target_update_step
+        self.target_update_interval = args.target_update_interval
+        self.hidden_dim = args.hidden_dim
         self.action_space = action_space
 
         # instantiate models
-        self.Q1 = QNetwork(n_s,n_a,n_h)
-        self.Q2 = QNetwork(n_s,n_a,n_h)
-        self.targetQ1 = QNetwork(n_s,n_a,n_h)
-        self.targetQ2 = QNetwork(n_s,n_a,n_h)
-        self.P = PolicyNetwork(n_s,n_h,n_a,self.action_space)
+        self.Q1 = QNetwork(n_s,action_space.shape[0],self.hidden_dim)
+        self.Q2 = QNetwork(n_s,action_space.shape[0],self.hidden_dim)
+        self.targetQ1 = QNetwork(n_s,action_space.shape[0],self.hidden_dim)
+        self.targetQ2 = QNetwork(n_s,action_space.shape[0],self.hidden_dim)
+        self.P = PolicyNetwork(n_s,self.hidden_dim,action_space)
 
         # copy initial params to target networks
         copy_params(self.targetQ1,self.Q1)
@@ -74,6 +75,8 @@ class SoftActorCritic(object):
         pi_loss.backward()
         self.P_optim.step()
 
-        if t_ups % self.target_update_step ==0:
+        if t_ups % self.target_update_interval ==0:
             update_target(self.targetQ1, self.Q1, self.tau)
             update_target(self.targetQ2, self.Q2, self.tau)
+
+        return qv1_loss.item(), qv2_loss.item(), pi_loss.item()

@@ -11,13 +11,14 @@ LOG_MAX = 2
 EPSILON = 1e-6
 
 class PolicyNetwork(nn.Module):
-    def __init__(self, n_s, n_h, n_a, action_space):
+    def __init__(self, n_s, n_h, action_space):
         super(PolicyNetwork,self).__init__()
+        self.epsilon = EPSILON
 
         self.linear1 = nn.Linear(n_s,n_h)
         self.linear2 = nn.Linear(n_h,n_h)
-        self.mean_linear = nn.Linear(n_h,n_a)
-        self.log_std_linear = nn.Linear(n_h,n_a)
+        self.mean_linear = nn.Linear(n_h,action_space.shape[0])
+        self.log_std_linear = nn.Linear(n_h,action_space.shape[0])
 
         self.apply(init_weights)
 
@@ -38,7 +39,8 @@ class PolicyNetwork(nn.Module):
 
     def sample_action(self,s):
         mean, log_std = self.forward(s)
-        normal = torch.distributions.Normal(0,1)
+        std = log_std.exp()
+        normal = torch.distributions.Normal(mean, std)
         x = normal.rsample()
         y = torch.tanh(x)
         a = y*self.action_scale + self.action_bias
