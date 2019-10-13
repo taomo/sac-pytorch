@@ -1,54 +1,38 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F 
-import torch.optim as opt
+import torch.nn.functional as F
+from torch.distributions import Normal
 
-from helper import init_weights
-
-# Hyperparameters
-LOG_MIN = -20
-LOG_MAX = 2
-EPSILON = 1e-6
+import hyp
 
 class PolicyNetwork(nn.Module):
-    def __init__(self, n_s, n_h, action_space):
+    def __init__(self,s_dim,a_dim,h_dim):
         super(PolicyNetwork,self).__init__()
-        self.epsilon = EPSILON
 
-        self.linear1 = nn.Linear(n_s,n_h)
-        self.linear2 = nn.Linear(n_h,n_h)
-        self.mean_linear = nn.Linear(n_h,action_space.shape[0])
-        self.log_std_linear = nn.Linear(n_h,action_space.shape[0])
+        self.linear1 = nn.Linear(s_dim,h_dim)
+        self.linear2 = nn.Linear(h_dim,h_dim)
+        self.linear3a = nn.Linear(h_dim,a_dim)
+        self.linear3b = nn.Linear(h_dim,a_dim)
 
-        self.apply(init_weights)
+        # self.apply(init_weights)
 
-        # normalize actions
-        self.action_scale = (action_space.high-action_space.low) / 2
-        self.action_bias = (action_space.high+action_space.low) / 2
-
-    def forward(self, s):
+    def forward(self,s):
         x = F.relu(self.linear1(s))
         x = F.relu(self.linear2(x))
-        mean = self.mean_linear(x)
-        log_std = self.log_std_linear(x)
-
-        # restrict log value to range
-        log_std = log_std.clamp(min=LOG_MIN, max=LOG_MAX)
-
+        mean = self.linear3a(x)
+        log_std = self.linear3b(x)
+        
         return mean, log_std
 
     def sample_action(self,s):
         mean, log_std = self.forward(s)
         std = log_std.exp()
-        normal = torch.distributions.Normal(mean, std)
-        x = normal.rsample()
-        y = torch.tanh(x)
-        a = y*self.action_scale + self.action_bias
-        log_pi = normal.log_prob(x)
 
-        # Enforcing action bound
-        log_pi -= torch.log(self.action_scale*(1-y.pow(2)) + self.epsilon)
-        log_pi = log_pi.sum(1,keepdim=True)
-        mean = torch.tanh(mean) * self.action_scale + self.action_bias
+        normal = Normal(0,1)
+        xi = normal.sample()
+        u = mean + std*xi.to(hyp.device)
+        a = torch.tanh(u)
 
-        return a, log_pi, mean
+        log_pi = Normal(mean,std).log_prob(u) - torch.log(1 - a.pow(2) + hyp.EPSILON)
+
+        return a, log_pi

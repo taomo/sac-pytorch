@@ -1,82 +1,79 @@
 import torch
-import torch.nn as nn
-import torch.nn.functional as F 
 import torch.optim as opt
+import torch.nn.functional as F
+import numpy as np
 
-from helper import update_target, copy_params
-from q_network import QNetwork
-from policy_network import PolicyNetwork
+from .q_network import QNetwork
+from .policy_network import PolicyNetwork
+from helper import ReplayMemory, copy_params, soft_update_params
+import hyp
 
 class SoftActorCritic(object):
-    def __init__(self, n_s, action_space, args):
-        super(SoftActorCritic,self).__init__()
+    def __init__(self,observation_space,action_space):
+        self.s_dim = observation_space.shape[0]
+        self.a_dim = action_space.shape[0]
 
-        # hyperparameters
-        self.alpha = args.alpha
-        self.gamma = args.gamma 
-        self.tau = args.tau
-        self.target_update_interval = args.target_update_interval
-        self.hidden_dim = args.hidden_dim
-        self.action_space = action_space
+        self.q_network_1 = QNetwork(self.s_dim,self.a_dim,hyp.H_DIM).to(hyp.device)
+        self.q_network_2 = QNetwork(self.s_dim,self.a_dim,hyp.H_DIM).to(hyp.device)
+        self.target_q_network_1 = QNetwork(self.s_dim,self.a_dim,hyp.H_DIM).to(hyp.device)
+        self.target_q_network_2 = QNetwork(self.s_dim,self.a_dim,hyp.H_DIM).to(hyp.device)
+        self.policy_network = PolicyNetwork(self.s_dim, self.a_dim, hyp.H_DIM).to(hyp.device)
 
-        # instantiate models
-        self.Q1 = QNetwork(n_s,action_space.shape[0],self.hidden_dim)
-        self.Q2 = QNetwork(n_s,action_space.shape[0],self.hidden_dim)
-        self.targetQ1 = QNetwork(n_s,action_space.shape[0],self.hidden_dim)
-        self.targetQ2 = QNetwork(n_s,action_space.shape[0],self.hidden_dim)
-        self.P = PolicyNetwork(n_s,self.hidden_dim,action_space)
+        copy_params(self.target_q_network_1, self.q_network_1)
+        copy_params(self.target_q_network_2, self.q_network_2)
+        
+        self.q_network_1_opt = opt.Adam(self.q_network_1.parameters(),hyp.LR)
+        self.q_network_2_opt = opt.Adam(self.q_network_2.parameters(),hyp.LR)
+        self.policy_network_opt = opt.Adam(self.policy_network.parameters(),hyp.LR)
 
-        # copy initial params to target networks
-        copy_params(self.targetQ1,self.Q1)
-        copy_params(self.targetQ2,self.Q2)
-
-        # initialize optimizers
-        self.Q1_optim = opt.Adam(self.Q1.parameters(),lr=args.lr)
-        self.Q2_optim = opt.Adam(self.Q2.parameters(),lr=args.lr)
-        self.P_optim = opt.Adam(self.P.parameters(), lr=args.lr)
+        self.replay_memory = ReplayMemory(hyp.REPLAY_MEMORY_SIZE)
 
     def get_action(self, s):
-        action, _, _ = self.P.sample_action(s)
+        return self.policy_network.sample_action(torch.FloatTensor(s).to(hyp.device))[0].cpu()
 
-        return action
+    def update_params(self):
+        state, action, reward, next_state, done = self.replay_memory.sample(hyp.BATCH_SIZE)
+        
+        # make sure all are torch tensors
+        state = torch.FloatTensor(state).to(hyp.device)
+        action = torch.FloatTensor(action).to(hyp.device)
+        reward = torch.FloatTensor(reward).unsqueeze(1).to(hyp.device)
+        next_state = torch.FloatTensor(next_state).to(hyp.device)
+        done = torch.FloatTensor(np.float32(done)).unsqueeze(1).to(hyp.device)
 
-    def update_params(self, replay_memory, batch_size, t_ups):
-        # sample batch from replay memory
-        s_batch, a_batch, r_batch, next_s_batch = replay_memory.sample(batch_size)
+        # compute targets
+        next_action, next_log_pi = self.policy_network.sample_action(next_state)
+        next_target_q1 = self.target_q_network_1(next_state,next_action)
+        next_target_q2 = self.target_q_network_2(next_state,next_action)
+        next_target_q = torch.min(next_target_q1,next_target_q2) - hyp.ALPHA*next_log_pi
+        next_q = reward + hyp.GAMMA*(1 - done)*next_target_q
 
-        with torch.no_grad():
-            next_a, next_s_log_pi, _ = self.P.sample_action(next_s_batch)
-            qv1_next_target = self.targetQ1(next_s_batch, next_a)
-            qv2_next_target = self.targetQ2(next_s_batch, next_a)
-            min_qv_next_target = torch.min(qv1_next_target, qv2_next_target) - self.alpha*next_s_log_pi
-            next_qv = r_batch + self.gamma*min_qv_next_target
+        # compute losses
+        q1 = self.q_network_1(state,action)
+        q2 = self.q_network_2(state,action)
+        q1_loss = F.mse_loss(q1,next_q)
+        q2_loss = F.mse_loss(q2,next_q)
+        
+        pi, log_pi = self.policy_network.sample_action(state)
+        q1_pi = self.q_network_1(state,pi)
+        q2_pi = self.q_network_2(state,pi)
+        min_q_pi = torch.min(q1_pi,q2_pi)
 
-        qv1 = self.Q1(s_batch, a_batch)
-        qv2 = self.Q2(s_batch, a_batch)
-        qv1_loss = F.mse_loss(qv1, next_qv)
-        qv2_loss = F.mse_loss(qv2, next_qv)
+        policy_loss = ((hyp.ALPHA * log_pi) - min_q_pi).mean()
 
-        pi, log_pi, _ = self.P.sample(s_batch)
-        qv1_pi = self.Q1(s_batch,pi)
-        qv2_pi = self.Q2(s_batch,pi)
-        min_qv_pi = torch.min(qv1_pi, qv2_pi)
+        # gradient descent
+        self.q_network_1_opt.zero_grad()
+        q1_loss.backward(retain_graph=True)
+        self.q_network_1_opt.step()
 
-        pi_loss = ((self.alpha*log_pi) - min_qv_pi).mean()
+        self.q_network_2_opt.zero_grad()
+        q2_loss.backward(retain_graph=True)
+        self.q_network_2_opt.step()
 
-        self.Q1_optim.zero_grad()
-        qv1_loss.backward()
-        self.Q1_optim.step()
+        self.policy_network_opt.zero_grad()
+        policy_loss.backward()
+        self.policy_network_opt.step()
 
-        self.Q2_optim.zero_grad()
-        qv2_loss.backward()
-        self.Q2_optim.step()
-
-        self.P_optim.zero_grad()
-        pi_loss.backward()
-        self.P_optim.step()
-
-        if t_ups % self.target_update_interval ==0:
-            update_target(self.targetQ1, self.Q1, self.tau)
-            update_target(self.targetQ2, self.Q2, self.tau)
-
-        return qv1_loss.item(), qv2_loss.item(), pi_loss.item()
+        # update target network params
+        soft_update_params(self.target_q_network_1,self.q_network_1)
+        soft_update_params(self.target_q_network_2,self.q_network_2)

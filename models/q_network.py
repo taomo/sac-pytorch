@@ -1,22 +1,19 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F 
-import torch.optim as opt
-
-from helper import init_weights
+import torch.nn.functional as F
 
 class QNetwork(nn.Module):
-    def __init__(self, n_s, n_a, n_h):
-        super(QNetwork, self).__init__()
+    def __init__(self,s_dim,a_dim,h_dim):
+        super(QNetwork,self).__init__()
 
-        self.linear1 = nn.Linear(n_s+n_a, n_h)
-        self.linear2 = nn.Linear(n_h,n_h)
-        self.linear3 = nn.Linear(n_h,1)
+        self.linear1 = nn.Linear(s_dim+a_dim,h_dim)
+        self.linear2 = nn.Linear(h_dim,h_dim)
+        self.linear3 = nn.Linear(h_dim,1)
 
-        self.apply(init_weights)
+        # self.apply(init_weights)
 
-    def forward(self, s, a):
-        x = torch.cat((s,a),1)
+    def forward(self,s,a):
+        x = torch.cat((s,a),dim=1)
         x = F.relu(self.linear1(x))
         x = F.relu(self.linear2(x))
         x = self.linear3(x)

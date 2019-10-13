@@ -1,32 +1,58 @@
+import gym
 from collections import deque
 import random
+import numpy as np 
+import matplotlib.pyplot as plt
 
-import torch.nn as nn
+import hyp
 
 class ReplayMemory:
-    def __init__(self, capacity):
-        self.capacity = capacity
-        self.memory = deque([])
-    
-    def append(self,x):
-        if len(self.memory) >= self.capacity:
-            self.memory.popleft()
-        self.memory.append(x)
+    def __init__(self,size):
+        self.size = size
+        self.memory = deque([],maxlen=size)
 
-    def sample(self,batch_size):
-        return random.sample(self.memory, batch_size)
+    def push(self, x):
+        self.memory.append(x)
+    
+    def sample(self, batch_size):
+        batch = random.sample(self.memory,batch_size)
+        state, action, reward, next_state, done = map(np.stack, zip(*batch))
+        return state, action, reward, next_state, done
 
     def get_len(self):
         return len(self.memory)
 
-def init_weights(layer):
-    nn.init.xavier_uniform_(layer.weight)
-    nn.init.constant_(layer.bias,0)
+def copy_params(target_network,source_network):
+    for tp, sp in zip(target_network.parameters(), source_network.parameters()):
+        tp.data.copy_(sp.data)
 
-def copy_params(target, source):
-    for tparam, sparam in zip(target.parameters(), source.parameters()):
-        tparam.data.copy_(sparam.data)
+def soft_update_params(target_network, source_network):
+    for tp, sp in zip(target_network.parameters(), source_network.parameters()):
+        tp.data.copy_(hyp.RHO * tp.data + (1.0-hyp.RHO)*sp.data)
 
-def update_target(target, source, tau):
-    for tparam, sparam in zip(target.parameters(), source.parameters()):
-        tparam.data.copy_(tparam.data * (1.0 - tau) + sparam.data * tau)
+class NormalizedActions(gym.ActionWrapper):
+    def action(self, action):
+        low  = self.action_space.low
+        high = self.action_space.high
+        
+        action = low + (action + 1.0) * 0.5 * (high - low)
+        action = np.clip(action, low, high)
+        
+        return action
+
+    def reverse_action(self, action):
+        low  = self.action_space.low
+        high = self.action_space.high
+        
+        action = 2 * (action - low) / (high - low) - 1
+        action = np.clip(action, low, high)
+        
+        return action
+        
+def plot_reward(i, rewards):
+    plt.close()
+    plt.figure(figsize=(20,5))
+    plt.subplot(131)
+    plt.title('frame %s. reward: %s' % (i, rewards[-1]))
+    plt.plot(rewards)
+    plt.show()
