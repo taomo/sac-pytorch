@@ -21,6 +21,8 @@ class PolicyNetwork(nn.Module):
         x = F.relu(self.linear2(x))
         mean = self.linear3a(x)
         log_std = self.linear3b(x)
+
+        log_std = torch.clamp(log_std, min=hyp.MIN_LOG, max=hyp.MAX_LOG)
         
         return mean, log_std
 

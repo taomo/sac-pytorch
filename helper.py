@@ -49,10 +49,11 @@ class NormalizedActions(gym.ActionWrapper):
         
         return action
         
-def plot_reward(i, rewards):
-    plt.close()
+def plot_reward(frame_idx, rewards):
     plt.figure(figsize=(20,5))
     plt.subplot(131)
-    plt.title('frame %s. reward: %s' % (i, rewards[-1]))
+    plt.title('frame %s. reward: %s' % (frame_idx, rewards[-1]))
     plt.plot(rewards)
+    plt.xlabel('Episode number')
+    plt.ylabel('Episode reward')
     plt.show()

@@ -7,6 +7,7 @@ import hyp
 def main():
     # Initialize environment and agent
     env = NormalizedActions(gym.make('Pendulum-v0'))
+    env.seed(0)
     agent = SoftActorCritic(env.observation_space, env.action_space)
     i = 0
     rewards = []
@@ -16,11 +17,11 @@ def main():
         episode_reward = 0
         
         for _ in range(hyp.MAX_STEPS):
-            if i > 10000:
+            if i > 17000:
                 env.render()
             if i > hyp.EXPLORATION_TIME:
-                action = agent.get_action(state).detach()
-                next_state, reward, done, _ = env.step(action.numpy())
+                action = agent.get_action(state).detach().numpy()
+                next_state, reward, done, _ = env.step(action)
             else:
                 action = env.action_space.sample()
                 next_state, reward, done, _ = env.step(action)
