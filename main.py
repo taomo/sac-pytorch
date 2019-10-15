@@ -1,4 +1,5 @@
 import gym
+import pybullet_envs
 
 from helper import NormalizedActions, plot_reward
 from models import SoftActorCritic
@@ -6,8 +7,7 @@ import hyp
 
 def main():
     # Initialize environment and agent
-    env = NormalizedActions(gym.make('Pendulum-v0'))
-    env.seed(0)
+    env = NormalizedActions(gym.make('LunarLanderContinuous-v2'))
     agent = SoftActorCritic(env.observation_space, env.action_space)
     i = 0
     rewards = []
@@ -17,7 +17,7 @@ def main():
         episode_reward = 0
         
         for _ in range(hyp.MAX_STEPS):
-            if i > 17000:
+            if i > 20000:
                 env.render()
             if i > hyp.EXPLORATION_TIME:
                 action = agent.get_action(state).detach().numpy()

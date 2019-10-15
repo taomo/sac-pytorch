@@ -3,6 +3,7 @@ from collections import deque
 import random
 import numpy as np 
 import matplotlib.pyplot as plt
+import torch.nn as nn
 
 import hyp
 
@@ -29,6 +30,11 @@ def copy_params(target_network,source_network):
 def soft_update_params(target_network, source_network):
     for tp, sp in zip(target_network.parameters(), source_network.parameters()):
         tp.data.copy_(hyp.RHO * tp.data + (1.0-hyp.RHO)*sp.data)
+
+def init_weights(m):
+    if type(m) == nn.Linear:
+        nn.init.xavier_uniform_(m.weight)
+        m.bias.data.fill_(0.01)
 
 class NormalizedActions(gym.ActionWrapper):
     def action(self, action):

@@ -28,9 +28,9 @@ class SoftActorCritic(object):
         self.q_network_2_opt = opt.Adam(self.q_network_2.parameters(),hyp.LR)
         
         if self.entropy_tuning:
-            self.target_entropy = -torch.prod(torch.Tensor(action_space.shape).to(device)).item()
-            self.log_alpha = torch.zeros(1, requires_grad=True, device=device)
-            self.alpha_optim = opt.Adam([self.log_alpha], lr=LR)
+            self.target_entropy = -torch.prod(torch.Tensor(action_space.shape).to(hyp.device)).item()
+            self.log_alpha = torch.zeros(1, requires_grad=True, device=hyp.device)
+            self.alpha_optim = opt.Adam([self.log_alpha], lr=hyp.LR)
         
         self.policy_network_opt = opt.Adam(self.policy_network.parameters(),hyp.LR)
 
@@ -59,6 +59,8 @@ class SoftActorCritic(object):
         # compute losses
         q1 = self.q_network_1(state,action)
         q2 = self.q_network_2(state,action)
+        # print(next_q.shape, q1.shape, q2.shape)
+
         q1_loss = F.mse_loss(q1,next_q)
         q2_loss = F.mse_loss(q2,next_q)
         

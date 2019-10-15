@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from torch.distributions import Normal
 
 import hyp
+from helper import init_weights
 
 class PolicyNetwork(nn.Module):
     def __init__(self,s_dim,a_dim,h_dim):
@@ -14,7 +15,7 @@ class PolicyNetwork(nn.Module):
         self.linear3a = nn.Linear(h_dim,a_dim)
         self.linear3b = nn.Linear(h_dim,a_dim)
 
-        # self.apply(init_weights)
+        self.apply(init_weights)
 
     def forward(self,s):
         x = F.relu(self.linear1(s))
