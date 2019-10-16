@@ -35,9 +35,11 @@ def main():
             i += 1
             
             if agent.replay_memory.get_len() > hyp.BATCH_SIZE: 
-                policy_loss = agent.update_params()
+                policy_loss, log_pi = agent.update_params()
                 if i % 1000 == 0:
-                    writer.add_scalar('policy_loss', policy_loss, i)
+                    writer.add_scalar('loss/policy_loss', policy_loss, i)
+                    writer.add_scalar('loss/entropy',-log_pi.mean(),i)
+                    writer.add_scalar('loss/entropy_coeff',agent.alpha,i)
 
             if i % 1000 == 0:
                 print("Frame: {}, reward: {}, policy_loss: {}".format(
@@ -48,7 +50,7 @@ def main():
                 break
 
         # scheduler.step()
-        writer.add_scalar('episode_reward',episode_reward,i)
+        writer.add_scalar('reward/episode_reward',episode_reward,i)
 
     env.close()
     writer.close()
