@@ -97,3 +97,5 @@ class SoftActorCritic(object):
         # update target network params
         soft_update_params(self.target_q_network_1,self.q_network_1)
         soft_update_params(self.target_q_network_2,self.q_network_2)
+
+        return policy_loss
