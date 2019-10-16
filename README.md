@@ -1,7 +1,23 @@
 ## sac-pytorch
 
-PyTorch implementation of the Soft Actor-Critic algorithm
+PyTorch implementation of the Soft Actor-Critic algorithm (without separate value function network)
+
+### Results (until now)
+1. Pendulum-v0
+
+![Pendulum-v0](https://github.com/ajaysub110/sac-pytorch/blob/master/plots/Pendulum-v0.png)
+
+2. LunarLanderContinuous-v2
+
+![LunarLanderContinuous-v2](https://github.com/ajaysub110/sac-pytorch/blob/master/plots/LunarLander-v2.png)
+
+### Libraries used
+- PyTorch
+- OpenAI Gym
+- PyBullet
+- Tensorboard
 
 ### References
-1. https://spinningup.openai.com/en/latest/algorithms/sac.html
-2. https://towardsdatascience.com/soft-actor-critic-demystified-b8427df61665
+- https://github.com/araffin/rl-baselines-zoo
+- https://spinningup.openai.com/en/latest/algorithms/sac.html
+- https://towardsdatascience.com/soft-actor-critic-demystified-b8427df61665
