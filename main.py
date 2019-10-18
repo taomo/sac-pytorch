@@ -7,7 +7,7 @@ import hyp
 
 def main():
     # Initialize environment and agent
-    env = gym.make('HopperBulletEnv-v0')
+    env = gym.make('HalfCheetahBulletEnv-v0')
 
     agent = SoftActorCritic(env.observation_space, env.action_space)
     i = 0
