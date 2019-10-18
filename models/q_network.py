@@ -10,7 +10,7 @@ class QNetwork(nn.Module):
 
         self.linear1 = nn.Linear(s_dim+a_dim,h_dim)
         self.linear2 = nn.Linear(h_dim,h_dim)
-        self.linear3 = nn.Linear(h_dim,a_dim)
+        self.linear3 = nn.Linear(h_dim,1)
 
         self.apply(init_weights)
 

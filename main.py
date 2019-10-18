@@ -1,56 +1,56 @@
 import gym
 import pybullet_envs
 from torch.utils.tensorboard import SummaryWriter
-from torch.optim.lr_scheduler import StepLR
 
-from helper import NormalizedActions, plot_reward, TimeFeatureWrapper
 from models import SoftActorCritic
 import hyp
 
 def main():
     # Initialize environment and agent
-    env = TimeFeatureWrapper(NormalizedActions(gym.make('HopperBulletEnv-v0')))
+    env = gym.make('HopperBulletEnv-v0')
+
     agent = SoftActorCritic(env.observation_space, env.action_space)
-    # scheduler = StepLR(agent.policy_network_opt,step_size=10,gamma=0.9)
     i = 0
+    ep = 1
     writer = SummaryWriter()
 
-    while i < hyp.MAX_FRAMES:
-        state = env.reset()
+    while ep >= 1:
         episode_reward = 0
+        state = env.reset()
+        done = False
+        j = 0
         
-        for _ in range(hyp.MAX_STEPS):
+        while not done:
             if i > hyp.EXPLORATION_TIME:
-                action = agent.get_action(state).detach().numpy()
-                next_state, reward, done, _ = env.step(action)
+                action = agent.get_action(state)
             else:
                 action = env.action_space.sample()
-                next_state, reward, done, _ = env.step(action)
-            
-            if i >= 30000:
-                env.render()
-            agent.replay_memory.push((state,action,reward,next_state,done))            
-            episode_reward += reward
-            state = next_state
-            i += 1
             
             if agent.replay_memory.get_len() > hyp.BATCH_SIZE: 
-                policy_loss, log_pi = agent.update_params()
-                if i % 1000 == 0:
-                    writer.add_scalar('loss/policy_loss', policy_loss, i)
-                    writer.add_scalar('loss/entropy',-log_pi.mean(),i)
-                    writer.add_scalar('loss/entropy_coeff',agent.alpha,i)
+                q1_loss, q2_loss, policy_loss, alpha_loss = agent.update_params()
+                    
+                writer.add_scalar('loss/q1_loss', q1_loss, i)
+                writer.add_scalar('loss/q2_loss', q2_loss, i)
+                writer.add_scalar('loss/policy_loss', policy_loss, i)
+                writer.add_scalar('loss/alpha_loss',alpha_loss,i)
+                writer.add_scalar('loss/alpha',agent.alpha,i)
 
-            if i % 1000 == 0:
-                print("Frame: {}, reward: {}, policy_loss: {}".format(
-                    i, episode_reward, policy_loss
-                ))
+            next_state, reward, done, _ = env.step(action)
+            i += 1
+            j += 1
+            episode_reward += reward
 
-            if done:
-                break
+            ndone = 1 if j == env._max_episode_steps else float(not done)
+            agent.replay_memory.push((state,action,reward,next_state,ndone))
+            state = next_state
+        
+        if i > hyp.MAX_STEPS:
+            break
 
-        # scheduler.step()
-        writer.add_scalar('reward/episode_reward',episode_reward,i)
+        writer.add_scalar('reward/episode_reward', episode_reward, ep)
+        if ep % 100 == 0:
+            print("Episode: {}, total numsteps: {}, episode steps: {}, reward: {}".format(ep, i, j, episode_reward))
+        ep += 1
 
     env.close()
     writer.close()

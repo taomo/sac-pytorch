@@ -7,15 +7,26 @@ import hyp
 from helper import init_weights
 
 class PolicyNetwork(nn.Module):
-    def __init__(self,s_dim,a_dim,h_dim):
+    def __init__(self,s_dim,a_dim,h_dim,action_space):
         super(PolicyNetwork,self).__init__()
 
         self.linear1 = nn.Linear(s_dim,h_dim)
         self.linear2 = nn.Linear(h_dim,h_dim)
+
         self.linear3a = nn.Linear(h_dim,a_dim)
         self.linear3b = nn.Linear(h_dim,a_dim)
 
         self.apply(init_weights)
+
+        # rescale actions
+        if action_space is None:
+            self.action_scale = torch.tensor(1.)
+            self.action_bias = torch.tensor(0.)
+        else:
+            self.action_scale = torch.FloatTensor(
+                (action_space.high - action_space.low) / 2.)
+            self.action_bias = torch.FloatTensor(
+                (action_space.high + action_space.low) / 2.)
 
     def forward(self,s):
         x = F.relu(self.linear1(s))
@@ -34,8 +45,10 @@ class PolicyNetwork(nn.Module):
         normal = Normal(0,1)
         xi = normal.sample()
         u = mean + std*xi.to(hyp.device)
-        a = torch.tanh(u)
+        y = torch.tanh(u)
+        a = y*self.action_scale + self.action_bias
+        log_pi = Normal(mean,std).log_prob(u) - torch.log(self.action_scale * (1 - y.pow(2)) + hyp.EPSILON)
+        log_pi = log_pi.sum(1,keepdim=True)
+        mean = torch.tanh(mean)*self.action_scale + self.action_bias
 
-        log_pi = Normal(mean,std).log_prob(u) - torch.log(1 - a.pow(2) + hyp.EPSILON)
-
-        return a, log_pi
+        return a, log_pi, mean

@@ -24,92 +24,15 @@ class ReplayMemory:
     def get_len(self):
         return len(self.memory)
 
-def copy_params(target_network,source_network):
-    for tp, sp in zip(target_network.parameters(), source_network.parameters()):
-        tp.data.copy_(sp.data)
+def copy_params(target, source):
+    for target_param, param in zip(target.parameters(), source.parameters()):
+        target_param.data.copy_(param.data)
 
-def soft_update_params(target_network, source_network):
-    for tp, sp in zip(target_network.parameters(), source_network.parameters()):
-        tp.data.copy_(hyp.RHO * tp.data + (1.0-hyp.RHO)*sp.data)
+def soft_update(target, source):
+    for target_param, param in zip(target.parameters(), source.parameters()):
+        target_param.data.copy_(target_param.data * (1.0 - hyp.TAU) + param.data * hyp.TAU)
 
 def init_weights(m):
     if type(m) == nn.Linear:
         nn.init.xavier_uniform_(m.weight)
-        m.bias.data.fill_(0.01)
-
-class NormalizedActions(gym.ActionWrapper):
-    def action(self, action):
-        low  = self.action_space.low
-        high = self.action_space.high
-        
-        action = low + (action + 1.0) * 0.5 * (high - low)
-        action = np.clip(action, low, high)
-        
-        return action
-
-    def reverse_action(self, action):
-        low  = self.action_space.low
-        high = self.action_space.high
-        
-        action = 2 * (action - low) / (high - low) - 1
-        action = np.clip(action, low, high)
-        
-        return action
-        
-def plot_reward(frame_idx, rewards):
-    plt.figure(figsize=(20,5))
-    plt.subplot(131)
-    plt.title('frame %s. reward: %s' % (frame_idx, rewards[-1]))
-    plt.plot(rewards)
-    plt.xlabel('Episode number')
-    plt.ylabel('Episode reward')
-    plt.show()
-
-class TimeFeatureWrapper(gym.Wrapper):
-    """
-    Add remaining time to observation space for fixed length episodes.
-    See https://arxiv.org/abs/1712.00378 and https://github.com/aravindr93/mjrl/issues/13.
-    :param env: (gym.Env)
-    :param max_steps: (int) Max number of steps of an episode
-        if it is not wrapped in a TimeLimit object.
-    :param test_mode: (bool) In test mode, the time feature is constant,
-        equal to zero. This allow to check that the agent did not overfit this feature,
-        learning a deterministic pre-defined sequence of actions.
-    """
-    def __init__(self, env, max_steps=1000, test_mode=False):
-        assert isinstance(env.observation_space, gym.spaces.Box)
-        # Add a time feature to the observation
-        low, high = env.observation_space.low, env.observation_space.high
-        low, high= np.concatenate((low, [0])), np.concatenate((high, [1.]))
-        env.observation_space = gym.spaces.Box(low=low, high=high, dtype=np.float32)
-
-        super(TimeFeatureWrapper, self).__init__(env)
-
-        if isinstance(env, TimeLimit):
-            self._max_steps = env._max_episode_steps
-        else:
-            self._max_steps = max_steps
-        self._current_step = 0
-        self._test_mode = test_mode
-
-    def reset(self):
-        self._current_step = 0
-        return self._get_obs(self.env.reset())
-
-    def step(self, action):
-        self._current_step += 1
-        obs, reward, done, info = self.env.step(action)
-        return self._get_obs(obs), reward, done, info
-
-    def _get_obs(self, obs):
-        """
-        Concatenate the time feature to the current observation.
-        :param obs: (np.ndarray)
-        :return: (np.ndarray)
-        """
-        # Remaining time is more general
-        time_feature = 1 - (self._current_step / self._max_steps)
-        if self._test_mode:
-            time_feature = 1.0
-        # Optionnaly: concatenate [time_feature, time_feature ** 2]
-        return np.concatenate((obs, [time_feature]))
+        m.bias.data.fill_(0)
