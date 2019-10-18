@@ -11,11 +11,15 @@ PyTorch implementation of the Soft Actor-Critic algorithm (without separate valu
 
 ![LunarLanderContinuous-v2](https://github.com/ajaysub110/sac-pytorch/blob/master/plots/LunarLander-v2.png)
 
+3. HopperBulletEnv-v0
+
+![HopperBulletEnv-v0](https://github.com/ajaysub110/sac-pytorch/blob/master/plots/HopperBulletEnv-v0.svg)
+
 ### Libraries used
 - PyTorch
 - OpenAI Gym
 - PyBullet
-- Tensorboard
+- TensorBoard
 
 ### References
 - https://github.com/araffin/rl-baselines-zoo
