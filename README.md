@@ -17,7 +17,7 @@ PyTorch implementation of the Soft Actor-Critic algorithm (without separate valu
 
 4. **HalfCheetahBulletEnv-v0**
 
-![HalfCheetahBulletEnv-v0](https://github.com/ajaysub110/sac-pytorch/blob/master/plots/HalfCheetahBulletEnv-v0.svg)
+![HalfCheetahBulletEnv-v0](https://github.com/ajaysub110/sac-pytorch/blob/master/plots/HalfCheetahBulletEnv-v0-more_epis.svg)
 
 **Note**: Tensorboard log files for all above experiments can be found within the runs subdirectory
 

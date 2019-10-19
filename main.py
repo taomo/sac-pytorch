@@ -4,10 +4,15 @@ from torch.utils.tensorboard import SummaryWriter
 
 from models import SoftActorCritic
 import hyp
+from helper import TimeFeatureWrapper
+
+def get_lr(optimizer):
+    for param_group in optimizer.param_groups:
+        return param_group['lr']
 
 def main():
     # Initialize environment and agent
-    env = gym.make('HalfCheetahBulletEnv-v0')
+    env = TimeFeatureWrapper(gym.make('HalfCheetahBulletEnv-v0'))
 
     agent = SoftActorCritic(env.observation_space, env.action_space)
     i = 0
@@ -40,7 +45,8 @@ def main():
             j += 1
             episode_reward += reward
 
-            ndone = 1 if j == env._max_episode_steps else float(not done)
+            # ndone = 1 if j == env._max_episode_steps else float(not done)
+            ndone = not done
             agent.replay_memory.push((state,action,reward,next_state,ndone))
             state = next_state
         
@@ -51,6 +57,7 @@ def main():
         if ep % 100 == 0:
             print("Episode: {}, total numsteps: {}, episode steps: {}, reward: {}".format(ep, i, j, episode_reward))
         ep += 1
+       writer.add_scalar('lr/policy_lr', get_lr(agent.policy_network_opt),ep)
 
     env.close()
     writer.close()
