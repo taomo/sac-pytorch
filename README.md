@@ -37,6 +37,7 @@ PyTorch implementation of the Soft Actor-Critic algorithm (without separate valu
 - TensorBoard
 
 ### References
+- https://arxiv.org/abs/1801.01290
 - https://github.com/araffin/rl-baselines-zoo
 - https://spinningup.openai.com/en/latest/algorithms/sac.html
 - https://towardsdatascience.com/soft-actor-critic-demystified-b8427df61665

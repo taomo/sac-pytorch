@@ -8,6 +8,7 @@ from gym.wrappers import TimeLimit
 
 import hyp
 
+# replay buffer
 class ReplayMemory:
     def __init__(self,size):
         self.size = size
@@ -24,6 +25,7 @@ class ReplayMemory:
     def get_len(self):
         return len(self.memory)
 
+# weight update methods
 def copy_params(target, source):
     for target_param, param in zip(target.parameters(), source.parameters()):
         target_param.data.copy_(param.data)
@@ -37,6 +39,7 @@ def init_weights(m):
         nn.init.orthogonal_(m.weight)
         m.bias.data.fill_(0)
 
+# for 
 class TimeFeatureWrapper(gym.Wrapper):
     """
     Add remaining time to observation space for fixed length episodes.

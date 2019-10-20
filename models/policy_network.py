@@ -16,7 +16,8 @@ class PolicyNetwork(nn.Module):
         self.linear3a = nn.Linear(h_dim,a_dim)
         self.linear3b = nn.Linear(h_dim,a_dim)
 
-        self.apply(init_weights)
+        # Apply weight initialisation to all linear layers
+        self.apply(init_weights)    
 
         # rescale actions
         if action_space is None:
@@ -34,6 +35,7 @@ class PolicyNetwork(nn.Module):
         mean = self.linear3a(x)
         log_std = self.linear3b(x)
 
+        # constrain log value in finite range to avoid NaN loss values
         log_std = torch.clamp(log_std, min=hyp.MIN_LOG, max=hyp.MAX_LOG)
         
         return mean, log_std
@@ -42,11 +44,14 @@ class PolicyNetwork(nn.Module):
         mean, log_std = self.forward(s)
         std = log_std.exp()
 
+        # calculate action using reparameterization trick and action scaling
         normal = Normal(0,1)
         xi = normal.sample()
         u = mean + std*xi.to(hyp.device)
         y = torch.tanh(u)
         a = y*self.action_scale + self.action_bias
+
+        # enforcing action bound (appendix of paper)
         log_pi = Normal(mean,std).log_prob(u) - torch.log(self.action_scale * (1 - y.pow(2)) + hyp.EPSILON)
         log_pi = log_pi.sum(1,keepdim=True)
         mean = torch.tanh(mean)*self.action_scale + self.action_bias

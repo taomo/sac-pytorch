@@ -14,19 +14,23 @@ class SoftActorCritic(object):
         self.a_dim = action_space.shape[0]
         self.alpha = hyp.ALPHA
 
+        # create component networks
         self.q_network_1 = QNetwork(self.s_dim,self.a_dim,hyp.H_DIM).to(hyp.device)
         self.q_network_2 = QNetwork(self.s_dim,self.a_dim,hyp.H_DIM).to(hyp.device)
         self.target_q_network_1 = QNetwork(self.s_dim,self.a_dim,hyp.H_DIM).to(hyp.device)
         self.target_q_network_2 = QNetwork(self.s_dim,self.a_dim,hyp.H_DIM).to(hyp.device)
         self.policy_network = PolicyNetwork(self.s_dim, self.a_dim, hyp.H_DIM, action_space).to(hyp.device)
 
+        # copy weights from q networks to target networks
         copy_params(self.target_q_network_1, self.q_network_1)
         copy_params(self.target_q_network_2, self.q_network_2)
         
+        # optimizers
         self.q_network_1_opt = opt.Adam(self.q_network_1.parameters(),hyp.LR)
         self.q_network_2_opt = opt.Adam(self.q_network_2.parameters(),hyp.LR)
         self.policy_network_opt = opt.Adam(self.policy_network.parameters(),hyp.LR)
         
+        # automatic entropy tuning
         if hyp.ENTROPY_TUNING:
             self.target_entropy = -torch.prod(torch.Tensor(action_space.shape).to(hyp.device)).item()
             self.log_alpha = torch.zeros(1, requires_grad=True, device=hyp.device)

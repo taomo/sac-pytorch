@@ -1,6 +1,6 @@
 import torch
 
-# Hyperparameters (For pendulum)
+# Hyperparameters
 TAU = 0.005
 EPSILON = 1e-6
 H_DIM = 256
