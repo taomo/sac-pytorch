@@ -1,6 +1,6 @@
-## sac-pytorch
+## Soft Actor-Critic PyTorch Implementation
 
-PyTorch implementation of the Soft Actor-Critic algorithm (without separate value function network)
+PyTorch implementation of the Soft Actor-Critic algorithm (without separate value function network) by Haarnoja et al.
 
 ### Results (until now)
 | Environment     | Final episode reward     | TensorBoard events file link
