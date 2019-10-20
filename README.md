@@ -3,6 +3,17 @@
 PyTorch implementation of the Soft Actor-Critic algorithm (without separate value function network)
 
 ### Results (until now)
+| Environment     | Final episode reward     | TensorBoard events file link
+| ----------------| :-----------------------:|----------------------------:|
+| Pendulum-v0     | -122.6                   |https://drive.google.com/open?id=19qimsoihlaivbvSxhY9VcXS7IhuGUaEx                             |
+| LunarLanderContinuous-v2 | 286.49          |https://drive.google.com/open?id=1S1wz0HHBxj2cCmAOAxgMN9C61oAjQc7u                            |
+|HopperBulletEnv-v0        | 912.47          |https://drive.google.com/open?id=1yrkyXH_-DJh789JZJVs0hOxOd29B2Eox                             |
+|HalfCheetahBulletEnv-v0   | 1952.3            |https://drive.google.com/open?id=1JHmsxL0vIiqHCoDH_ebvCFJLR7ya0CqQ                             | 
+
+**Note**: For hyperparameters used for training, please refer [araffin/rl-baselines-zoo](https://github.com/araffin/rl-baselines-zoo/blob/master/hyperparams/sac.yml)
+
+### Episode reward vs Episode number Plots
+
 1. **Pendulum-v0**
 
 ![Pendulum-v0](https://github.com/ajaysub110/sac-pytorch/blob/master/plots/Pendulum-v0.png)
@@ -18,8 +29,6 @@ PyTorch implementation of the Soft Actor-Critic algorithm (without separate valu
 4. **HalfCheetahBulletEnv-v0**
 
 ![HalfCheetahBulletEnv-v0](https://github.com/ajaysub110/sac-pytorch/blob/master/plots/HalfCheetahBulletEnv-v0-more_epis.svg)
-
-**Note**: Tensorboard log files for all above experiments can be found within the runs subdirectory
 
 ### Libraries used
 - PyTorch
