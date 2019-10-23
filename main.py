@@ -1,5 +1,5 @@
 import gym
-import pybullet_envs
+# import pybullet_envs
 from torch.utils.tensorboard import SummaryWriter
 
 from models import SoftActorCritic
