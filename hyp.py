@@ -35,6 +35,6 @@ MAX_STEPS = 2000000
 EXPLORATION_TIME = 1000
 MIN_LOG = -20
 MAX_LOG = 2
-TENSORBOARD_LOGS = False
+TENSORBOARD_LOGS = True
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model_path = './my_model'

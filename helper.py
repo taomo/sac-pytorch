@@ -51,7 +51,7 @@ class TimeFeatureWrapper(gym.Wrapper):
         equal to zero. This allow to check that the agent did not overfit this feature,
         learning a deterministic pre-defined sequence of actions.
     """
-    def __init__(self, env, max_steps=1000, test_mode=False):
+    def __init__(self, env, max_steps=500, test_mode=False):   #max_steps=1000
         assert isinstance(env.observation_space, gym.spaces.Box)
         # Add a time feature to the observation
         low, high = env.observation_space.low, env.observation_space.high
@@ -74,6 +74,8 @@ class TimeFeatureWrapper(gym.Wrapper):
     def step(self, action):
         self._current_step += 1
         obs, reward, done, info = self.env.step(action)
+        if self._current_step >= self._max_steps:
+            done = True
         return self._get_obs(obs), reward, done, info
 
     def _get_obs(self, obs):
