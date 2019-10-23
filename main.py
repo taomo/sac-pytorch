@@ -6,6 +6,8 @@ from models import SoftActorCritic
 import hyp
 from helper import TimeFeatureWrapper
 
+print(hyp.device)
+
 def get_lr(optimizer):
     for param_group in optimizer.param_groups:
         return param_group['lr']

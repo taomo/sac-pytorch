@@ -21,13 +21,13 @@ class PolicyNetwork(nn.Module):
 
         # rescale actions
         if action_space is None:
-            self.action_scale = torch.tensor(1.)
-            self.action_bias = torch.tensor(0.)
+            self.action_scale = torch.tensor(1.).to(hyp.device)
+            self.action_bias = torch.tensor(0.).to(hyp.device)
         else:
             self.action_scale = torch.FloatTensor(
-                (action_space.high - action_space.low) / 2.)
+                (action_space.high - action_space.low) / 2.).to(hyp.device)
             self.action_bias = torch.FloatTensor(
-                (action_space.high + action_space.low) / 2.)
+                (action_space.high + action_space.low) / 2.).to(hyp.device)
 
     def forward(self,s):
         x = F.relu(self.linear1(s))
