@@ -44,14 +44,14 @@ class SoftActorCritic(object):
         return action.detach().cpu().numpy()[0]
 
     def update_params(self):
-        states, actions, rewards, next_states, dones = self.replay_memory.sample(hyp.BATCH_SIZE)
+        states, actions, rewards, next_states, ndones = self.replay_memory.sample(hyp.BATCH_SIZE)
         
         # make sure all are torch tensors
         states = torch.FloatTensor(states).to(hyp.device)
         actions = torch.FloatTensor(actions).to(hyp.device)
         rewards = torch.FloatTensor(rewards).unsqueeze(1).to(hyp.device)
         next_states = torch.FloatTensor(next_states).to(hyp.device)
-        dones = torch.FloatTensor(np.float32(dones)).unsqueeze(1).to(hyp.device)
+        ndones = torch.FloatTensor(np.float32(ndones)).unsqueeze(1).to(hyp.device)
 
         # compute targets
         with torch.no_grad():
@@ -59,7 +59,7 @@ class SoftActorCritic(object):
             next_target_q1 = self.target_q_network_1(next_states,next_action)
             next_target_q2 = self.target_q_network_2(next_states,next_action)
             next_target_q = torch.min(next_target_q1,next_target_q2) - self.alpha*next_log_pi
-            next_q = rewards + hyp.GAMMA*dones*next_target_q
+            next_q = rewards + hyp.GAMMA*ndones*next_target_q
 
         # compute losses
         q1 = self.q_network_1(states,actions)
