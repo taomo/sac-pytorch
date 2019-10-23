@@ -105,3 +105,25 @@ class SoftActorCritic(object):
         soft_update(self.target_q_network_2,self.q_network_2)
 
         return q1_loss.item(), q2_loss.item(), policy_loss.item(), alpha_loss.item()
+
+
+
+    def save_model(self, path):
+        torch.save(self.q_network_1.state_dict(), path+'_q1')
+        torch.save(self.q_network_2.state_dict(), path+'_q2')
+        torch.save(self.policy_network.state_dict(), path+'_policy')
+
+    def load_model(self, path):
+        self.q_network_1.load_state_dict(torch.load(path+'_q1'))
+        self.q_network_2.load_state_dict(torch.load(path+'_q2'))
+        self.policy_network.load_state_dict(torch.load(path+'_policy'))
+
+        self.q_network_1.eval()
+        self.q_network_2.eval()
+        self.policy_network.eval()        
+
+        #         self.q_network_1 = QNetwork(self.s_dim,self.a_dim,hyp.H_DIM).to(hyp.device)
+        # self.q_network_2 = QNetwork(self.s_dim,self.a_dim,hyp.H_DIM).to(hyp.device)
+        # self.target_q_network_1 = QNetwork(self.s_dim,self.a_dim,hyp.H_DIM).to(hyp.device)
+        # self.target_q_network_2 = QNetwork(self.s_dim,self.a_dim,hyp.H_DIM).to(hyp.device)
+        # self.policy_network = PolicyNetwork(self.s_dim, self.a_dim, hyp.H_DIM, action_space).to(hyp.device)

@@ -67,8 +67,11 @@ def main():
 
         if ep % 10 == 0:
             print("Episode: {}, total numsteps: {}, episode steps: {}, reward: {}".format(ep, i, j, episode_reward))
+            agent.save_model(hyp.model_path)
         ep += 1
 
+    agent.save_model(hyp.model_path)
+    
     env.close()
     if hyp.TENSORBOARD_LOGS:
         writer.close()

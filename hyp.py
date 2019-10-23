@@ -21,7 +21,7 @@ import gym_Vibration
 
 
 # Hyperparameters
-ENV = 'Pendulum-v0' # 'HalfCheetah-v2'   Pendulum-v0   Hopper-v2  VibrationEnv-v0
+ENV = 'VibrationEnv-v0' # 'HalfCheetah-v2'   Pendulum-v0   Hopper-v2  VibrationEnv-v0
 TAU = 0.005 # 0.01
 EPSILON = 1e-6
 H_DIM = 256
@@ -37,3 +37,4 @@ MIN_LOG = -20
 MAX_LOG = 2
 TENSORBOARD_LOGS = False
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model_path = './my_model'
