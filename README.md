@@ -34,6 +34,7 @@ PyTorch implementation of the Soft Actor-Critic algorithm (without separate valu
 - PyTorch
 - OpenAI Gym
 - PyBullet
+- mujoco-py
 - TensorBoard
 
 ### References
